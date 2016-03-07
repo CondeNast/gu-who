@@ -27,7 +27,7 @@ import scala.util.{Failure, Success, Try}
 import scalax.file.ImplicitConversions._
 
 object OrgSnapshot {
-  
+
   def apply(auditDef: AuditDef): Future[OrgSnapshot] = {
     val org = auditDef.org
     val peopleRepo = org.peopleRepo
@@ -53,7 +53,7 @@ object OrgSnapshot {
 
     val twoFactorAuthDisabledUsersF = Future {
       org.listMembersWithFilter("2fa_disabled").asList().toSet
-    } andThen { case us => Logger.info(s"2fa_disabled count: ${us.map(_.size)}") }  
+    } andThen { case us => Logger.info(s"2fa_disabled count: ${us.map(_.size)}") }
 
     val openIssuesF = Future {
       peopleRepo.getIssues(GHIssueState.OPEN).toSet.filter(_.getUser==auditDef.bot)
@@ -116,10 +116,14 @@ case class OrgSnapshot(
     for {
       issue <- openIssues if issue.assignee.isEmpty
     } {
-      issue.comment(
-        "Closing this issue as it's not assigned to any user, so this bot can not process it. " +
-          "Perhaps the user account was deleted?")
-      issue.close()
+      if (Utility.isLogOnly) {
+        Logger.info(s"[LOGONLY] Would have closed issue for ${issue.getTitle}, but will not because in LOGONLY mode")
+      } else {
+        issue.comment(
+          "Closing this issue as it's not assigned to any user, so this bot can not process it. " +
+            "Perhaps the user account was deleted?")
+        issue.close()
+      }
     }
   }
 
