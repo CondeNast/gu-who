@@ -54,31 +54,47 @@ case class OrgUserProblems(org: GHOrganization, user: GHUser, applicableRequirem
 
     stateUpdate match {
       case UserHasLeftOrg =>
-        issue.comment(views.html.ghIssues.userHasLeftOrg(org, user).body)
+        if (Utility.isLogOnly) {
+          Logger.info(s"[LOGONLY] Would have written comment on existing issue for ${user.getLogin} because they left the org")
+        } else {
+          issue.comment(views.html.ghIssues.userHasLeftOrg(org, user).body)
+        }
 
       case membershipTermination: MembershipTermination =>
-        issue.comment(views.html.ghIssues.membershipTermination(user, membershipTermination)(org).body)
-        org.remove(user)
+        if (Utility.isLogOnly) {
+          Logger.info(s"[LOGONLY] Would have removed ${user.getLogin} because action was not taken for their assigned issue")
+        } else {
+          issue.comment(views.html.ghIssues.membershipTermination(user, membershipTermination)(org).body)
+          org.remove(user)
+        }
       case update: MemberUserUpdate =>
-        if (update.orgMembershipWillBeConcealed) {
-          org.conceal(user)
+        if (Utility.isLogOnly) {
+          Logger.info(s"[LOGONLY] Would have updated issue for ${user.getLogin} because action had been taken")
+        } else {
+          if (update.orgMembershipWillBeConcealed) {
+            org.conceal(user)
+          }
+
+          if (update.worthyOfComment) {
+            issue.comment(views.html.ghIssues.memberUserUpdate(update)(org).body)
+          }
+
+          val oldLabelSet = issue.labelNames.toSet
+          val unassociatedLabels = oldLabelSet -- applicableLabels
+          val newLabelSet = problems.map(_.issueLabel) ++ unassociatedLabels ++ update.terminationWarning.map(_.warnedLabel)
+
+          if (newLabelSet != oldLabelSet) issue.setLabels(newLabelSet.toSeq: _*)
         }
-
-        if (update.worthyOfComment) {
-          issue.comment(views.html.ghIssues.memberUserUpdate(update)(org).body)
-        }
-
-        val oldLabelSet = issue.labelNames.toSet
-        val unassociatedLabels = oldLabelSet -- applicableLabels
-        val newLabelSet = problems.map(_.issueLabel) ++ unassociatedLabels ++ update.terminationWarning.map(_.warnedLabel)
-
-        if (newLabelSet != oldLabelSet) issue.setLabels(newLabelSet.toSeq: _*)
       case default =>
         Logger.info(s"default case hit for updateIssue. Please ensure that a new explicit case is created, which fully respects the logonly configuration.")
     }
 
     if (stateUpdate.issueCanBeClosed) {
-      issue.close()
+      if (Utility.isLogOnly) {
+        Logger.info(s"[LOGONLY] Would have closed existing issue for ${user.getLogin} because all actions required are complete")
+      } else {
+        issue.close()
+      }
     }
   }
 
