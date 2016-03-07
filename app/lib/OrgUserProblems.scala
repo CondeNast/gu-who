@@ -31,15 +31,18 @@ case class OrgUserProblems(org: GHOrganization, user: GHUser, applicableRequirem
     require(problems.nonEmpty)
 
     if (org.testMembership(user)) {
-      Logger.info(s"Creating issue for ${user.getLogin} $problems")
+      if (Utility.isLogOnly) {
+        Logger.info(s"[LOGONLY] Would have created issue for ${user.getLogin} because of $problems")
+      } else {
+        Logger.info(s"Creating issue for ${user.getLogin} $problems")
 
-      val title = s"@${user.getLogin}: ${org.displayName} asks you to fix your GitHub account!"
-      val description = views.html.ghIssues.issue(user, org, problems).body
-
-      val issue = org.peopleRepo.createIssue(title)
-      for (p <- problems) { issue.label(p.issueLabel) }
-      val createdIssue = issue.assignee(user).body(description).create()
-      Logger.info(s"Created issue #${createdIssue.getNumber} for ${user.getLogin}")
+        val title = s"@${user.getLogin}: ${org.displayName} asks you to fix your GitHub account!"
+        val description = views.html.ghIssues.issue(user, org, problems).body
+        val issue = org.peopleRepo.createIssue(title)
+        for (p <- problems) { issue.label(p.issueLabel) }
+        val createdIssue = issue.assignee(user).body(description).create()
+        Logger.info(s"Created issue #${createdIssue.getNumber} for ${user.getLogin}")
+      }
     } else {
       Logger.info(s"No need to create an issue for ${user.getLogin} - they are no longer a member of the ${org.getLogin} org")
     }
@@ -70,13 +73,15 @@ case class OrgUserProblems(org: GHOrganization, user: GHUser, applicableRequirem
         val newLabelSet = problems.map(_.issueLabel) ++ unassociatedLabels ++ update.terminationWarning.map(_.warnedLabel)
 
         if (newLabelSet != oldLabelSet) issue.setLabels(newLabelSet.toSeq: _*)
+      case default =>
+        Logger.info(s"default case hit for updateIssue. Please ensure that a new explicit case is created, which fully respects the logonly configuration.")
     }
 
     if (stateUpdate.issueCanBeClosed) {
       issue.close()
     }
   }
-  
+
   def stateUpdateFor(issue: GHIssue): StateUpdate = {
     if (org.testMembership(user)) {
       val oldLabels = issue.getLabels.map(_.getName).toSet
@@ -111,4 +116,3 @@ case class OrgUserProblems(org: GHOrganization, user: GHUser, applicableRequirem
     } else UserHasLeftOrg
   }
 }
-
