@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.3-1",
   "com.madgag.scala-git" %% "scala-git-test" % "3.3" % "test",
   "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
-  "net.logstash.logback" %% "logstash-logback-encoder" % "5.0"
+  "net.logstash.logback" % "logstash-logback-encoder" % "5.0"
 )     
 
 
