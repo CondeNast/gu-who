@@ -5,6 +5,10 @@
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="net.logstash.logback.encoder.LogstashEncoder" >
      <shortenedLoggerNameLength>15</shortenedLoggerNameLength>
+     <excludeMdcKeyName>level_value</excludeMdcKeyName>
+     <excludeMdcKeyName>application.home</excludeMdcKeyName>
+     <excludeMdcKeyName>logger_name</excludeMdcKeyName>
+     <excludeMdcKeyName>@version</excludeMdcKeyName>
     </encoder>
   </appender>
 
