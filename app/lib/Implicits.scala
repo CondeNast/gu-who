@@ -58,8 +58,13 @@ object Implicits {
 
     lazy val botsTeamOpt = teamsByName.get("bots")
 
-    def testMembership(user: GHUser): Boolean = {
-      true
+     def testMembership(user: GHUser): Boolean = {
+      if (user.isMemberOf(allTeam)) true else {
+        val orgMember = user.isMemberOf(org)
+        Logger.info(s"user ${user.getLogin} NOT in 'all' team. orgMember=${orgMember}")
+        if (orgMember) { allTeam.add(user) }
+        orgMember
+      }
     }
 
     def createAllTeam: GHTeam = {
