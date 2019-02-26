@@ -25,7 +25,7 @@ object TerminationSchedule {
 
   val EarliestTerminationDate = new DateTime(2014, 4, 9, 9, 0, DateTimeZone.UTC)
 
-  val Relaxed = TerminationSchedule(8.weeks, 1.week)
+  val Relaxed = TerminationSchedule(4.weeks, 1.week)
 
   val LabelPeriodFormatter = new PeriodFormatterBuilder()
     .appendYears().appendSuffix("Y")
